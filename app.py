@@ -143,8 +143,8 @@ def get_course_info_from_url():
         # Extract instructor (author)
         instructor = soup.select_one('a.font-medium.text-gray-500').get_text(strip=True) if soup.select_one('a.font-medium.text-gray-500') else 'No instructor found'
         
-        # Extract image URL (course thumbnail)
-        image_element = soup.select_one('div.rounded-lg.h-64.overflow-hidden img')
+        # Extract image URL from the specific section you mentioned
+        image_element = soup.select_one('a.relative.block.group img')
         image_url = image_element['src'] if image_element else 'No image found'
         
         # Extract price information
