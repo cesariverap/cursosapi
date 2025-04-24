@@ -90,7 +90,7 @@ def get_cursos():
             
     except Exception as e:
         app.logger.error(f"Error en la API: {str(e)}")
-        return jsonify({'error': 'Ocurrió un error interno en el servidor'}), 500
+        return jsonify({'error': 'Ocurrió un    terno en el servidor'}), 500
 
 @app.route('/api/cursos/total_pages', methods=['GET'])
 def get_total_pages():
@@ -124,6 +124,107 @@ def get_total_pages():
         app.logger.error(f"Error obteniendo total de páginas: {str(e)}")
         return jsonify({'error': 'No se pudo determinar el total de páginas'}), 500
 
+@app.route('/api/cursos/info_from_url', methods=['GET'])
+def get_course_info_from_url():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({'error': 'Falta el parámetro URL'}), 400
+
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return jsonify({'error': 'No se pudo acceder a la URL proporcionada'}), 500
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Extract course title
+        title = soup.find('h1', class_='text-4xl').get_text(strip=True) if soup.find('h1', class_='text-4xl') else 'No title found'
+        
+        # Extract instructor (author)
+        instructor = soup.select_one('a.font-medium.text-gray-500').get_text(strip=True) if soup.select_one('a.font-medium.text-gray-500') else 'No instructor found'
+        
+        # Extract image URL (course thumbnail)
+        image_element = soup.select_one('div.rounded-lg.h-64.overflow-hidden img')
+        image_url = image_element['src'] if image_element else 'No image found'
+        
+        # Extract price information
+        current_price = soup.select_one('div.inline-flex.text-sm.font-medium.text-red-600 span').get_text(strip=True) if soup.select_one('div.inline-flex.text-sm.font-medium.text-red-600 span') else 'Free'
+        original_price = soup.select_one('div.inline-flex.text-sm.font-medium.text-slate-500').get_text(strip=True) if soup.select_one('div.inline-flex.text-sm.font-medium.text-slate-500') else ''
+        
+        # Extract rating and reviews
+        rating = soup.select_one('span.font-semibold.text-gray-900').get_text(strip=True) if soup.select_one('span.font-semibold.text-gray-900') else '0.0'
+        reviews = soup.select_one('span.inline-block.text-gray-500').get_text(strip=True).strip('()') if soup.select_one('span.inline-block.text-gray-500') else '0'
+        
+        # Extract coupon code if available
+        coupon_element = soup.select_one('span.text-red-600.dark\\:text-red-400.font-bold')
+        coupon = coupon_element.get_text(strip=True) if coupon_element else ''
+        
+        # Extract publication date
+        date_published = soup.select_one('p.text-center.text-sm.text-gray-600').get_text(strip=True).replace('Publicado el', '').strip() if soup.select_one('p.text-center.text-sm.text-gray-600') else ''
+        
+        # Extract category
+        category = soup.select_one('a.inline-flex.items-center.px-3.py-2.bg-gray-700').get_text(strip=True) if soup.select_one('a.inline-flex.items-center.px-3.py-2.bg-gray-700') else ''
+
+        # Extract "Lo que aprenderás" section
+        learning_items = []
+        learning_section = soup.find('h2', string='Lo que aprenderás')
+        if learning_section:
+            learning_list = learning_section.find_next('ul')
+            if learning_list:
+                learning_items = [li.get_text(strip=True) for li in learning_list.find_all('li')]
+
+        # Extract "Requisitos" section
+        requirements = []
+        requirements_section = soup.find('h2', string='Requisitos')
+        if requirements_section:
+            requirements_list = requirements_section.find_next('ul')
+            if requirements_list:
+                requirements = [li.get_text(strip=True) for li in requirements_list.find_all('li')]
+
+        # Extract "Descripción" section
+        description = ''
+        description_section = soup.find('h2', string='Descripción')
+        if description_section:
+            description_div = description_section.find_next('div')
+            if description_div:
+                # Get all paragraphs and join them with newlines
+                description = '\n\n'.join(p.get_text(strip=True) for p in description_div.find_all('p'))
+
+        # Extract "¿Para quién es este curso?" section
+        target_audience = []
+        audience_section = soup.find('h2', string='¿Para quién es este curso?')
+        if audience_section:
+            audience_list = audience_section.find_next('ul')
+            if audience_list:
+                target_audience = [li.get_text(strip=True) for li in audience_list.find_all('li')]
+
+        scraped_at = datetime.utcnow().isoformat()
+
+        return jsonify({
+            'curso': {
+                'title': title,
+                'instructor': instructor,
+                'image_url': image_url,
+                'current_price': current_price,
+                'original_price': original_price,
+                'coupon': coupon,
+                'rating': rating,
+                'reviews': reviews,
+                'category': category,
+                'date_published': date_published,
+                'link': url,
+                'scraped_at': scraped_at,
+                'learning_outcomes': learning_items,
+                'requirements': requirements,
+                'description': description,
+                'target_audience': target_audience
+            }
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error scraping: {str(e)}")
+        return jsonify({'error': 'Ocurrió un error procesando la página', 'details': str(e)}), 500
+        
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 8000))
