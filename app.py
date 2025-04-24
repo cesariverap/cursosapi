@@ -90,7 +90,7 @@ def get_cursos():
             
     except Exception as e:
         app.logger.error(f"Error en la API: {str(e)}")
-        return jsonify({'error': 'Ocurrió un    terno en el servidor'}), 500
+        return jsonify({'error': 'Ocurrió un error interno en el servidor'}), 500
 
 @app.route('/api/cursos/total_pages', methods=['GET'])
 def get_total_pages():
@@ -224,7 +224,7 @@ def get_course_info_from_url():
     except Exception as e:
         app.logger.error(f"Error scraping: {str(e)}")
         return jsonify({'error': 'Ocurrió un error procesando la página', 'details': str(e)}), 500
-        
+
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 8000))
