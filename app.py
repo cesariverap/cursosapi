@@ -1,17 +1,21 @@
 from flask import Flask, jsonify, request
+from flask_cors import CORS  # Importa CORS
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # Habilita CORS para toda la aplicación
+
+# También puedes configurarlo de manera más específica si lo prefieres:
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 BASE_URL = "https://www.cursosdev.com/coupons/Spanish"
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     'Accept-Language': 'es-ES,es;q=0.9'
 }
-
 def scrape_course(card):
     try:
         # Extraer enlace completo
