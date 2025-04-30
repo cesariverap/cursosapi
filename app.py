@@ -1,15 +1,10 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS  # Importa CORS
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # Habilita CORS para toda la aplicación
-
-# También puedes configurarlo de manera más específica si lo prefieres:
-# CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 BASE_URL = "https://www.cursosdev.com/coupons/Spanish"
 HEADERS = {
